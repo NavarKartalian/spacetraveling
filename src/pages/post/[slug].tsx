@@ -132,14 +132,6 @@ export default function Post({ post, preview, navigation }: PostProps) {
             <div className={styles.postBody} dangerouslySetInnerHTML={{ __html: RichText.asHtml(content.body) }} />
           </div>
         ))}
-
-        {preview && (
-          <aside>
-            <Link href="/api/exit-preview">
-              <a className={commonStyles.preview}>Sair do modo Preview</a>
-            </Link>
-          </aside>
-        )}
       </main>
 
       <section className={`${styles.navigation} ${commonStyles.container}`}>
@@ -163,6 +155,14 @@ export default function Post({ post, preview, navigation }: PostProps) {
       </section>
 
       <Comments />
+
+      {preview && (
+          <aside>
+            <Link href="/api/exit-preview">
+              <a className={commonStyles.preview}>Sair do modo Preview</a>
+            </Link>
+          </aside>
+        )}
     </>
   )
 }
@@ -191,7 +191,7 @@ export const getStaticProps = async ({ params, preview = false, previewData }) =
   const { slug } = params;
   const response = await prismic.getByUID('posts', String(slug), {ref: previewData?.ref || null,});
 
-  const prevPost = await prismic.query([Prismic.Predicates.at('document.type', 'posts')],
+  const nextPost = await prismic.query([Prismic.Predicates.at('document.type', 'posts')],
   {
     pageSize: 1,
     after: response.id,
@@ -199,11 +199,11 @@ export const getStaticProps = async ({ params, preview = false, previewData }) =
   }
   );
 
-  const nextPost = await prismic.query([Prismic.Predicates.at('document.type', 'posts')],
+  const prevPost = await prismic.query([Prismic.Predicates.at('document.type', 'posts')],
   {
     pageSize: 1,
     after: response.id,
-    orderings: '[document.last_publication_date]'
+    orderings: '[document.last_publication_date desc]'
   }
   );
   

@@ -115,15 +115,15 @@ interface HomeProps {
             Carregar mais posts
           </button>
           )}
+      </main>
 
-          {preview && (
+      {preview && (
             <aside>
               <Link href="/api/exit-preview">
                 <a className={commonStyles.preview}>Sair do modo Preview</a>
               </Link>
             </aside>
           )}
-      </main>
     </>
   );
 }
