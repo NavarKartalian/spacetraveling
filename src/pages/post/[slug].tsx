@@ -10,9 +10,12 @@ import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { RichText } from 'prismic-dom';
+import Comments from '../../components/Comments';
+import Link from 'next/link';
 
 interface Post {
   first_publication_date: string | null;
+  last_publication_date: string | null;
   data: {
     title: string;
     banner: {
@@ -30,9 +33,24 @@ interface Post {
 
 interface PostProps {
   post: Post;
+  preview: boolean;
+  navigation: {
+    prevPost: {
+      uid: string;
+      data: {
+        title: string;
+      }
+    }[];
+    nextPost: {
+      uid: string;
+      data: {
+        title: string;
+      }
+    }[];
+  }
 }
 
-export default function Post({ post }: PostProps) {
+export default function Post({ post, preview, navigation }: PostProps) {
   const router = useRouter();
 
   if(router.isFallback) {
@@ -50,10 +68,24 @@ export default function Post({ post }: PostProps) {
   }, 0);
   const readTime = Math.ceil(totalWords / 200);
 
+  const isPostEdited =
+    post.first_publication_date !== post.last_publication_date;
+
+  let editionDate;
+  if (isPostEdited) {
+    editionDate = format(
+      new Date(post.last_publication_date),
+      "'* editado em' dd MMM yyyy', às' H':'m",
+      {
+        locale: ptBR,
+      }
+    );
+  }
+
   return (
     <>
       <Head>
-        <title> | Spacetraveling</title>
+        <title>{post.data.title}</title>
       </Head>
 
       <Header />
@@ -91,6 +123,7 @@ export default function Post({ post }: PostProps) {
               </p>
             </li>
           </ul>
+          {isPostEdited && <span>{editionDate}</span>}
         </header>
 
         {post.data.content.map(content => (
@@ -99,8 +132,37 @@ export default function Post({ post }: PostProps) {
             <div className={styles.postBody} dangerouslySetInnerHTML={{ __html: RichText.asHtml(content.body) }} />
           </div>
         ))}
-        
+
+        {preview && (
+          <aside>
+            <Link href="/api/exit-preview">
+              <a className={commonStyles.preview}>Sair do modo Preview</a>
+            </Link>
+          </aside>
+        )}
       </main>
+
+      <section className={`${styles.navigation} ${commonStyles.container}`}>
+        {navigation?.prevPost.length > 0 && (
+          <Link href={navigation.prevPost[0].uid}>
+            <button type='button' className={styles.prev}>
+              <h2>{navigation.prevPost[0].data.title}</h2>
+              <a>Post anterior</a>
+            </button>
+          </Link>
+        )}
+
+        {navigation?.nextPost.length > 0 && (
+          <Link href={navigation.nextPost[0].uid}>
+            <button type='button' className={styles.next}>
+              <h2>{navigation.nextPost[0].data.title}</h2>
+              <a>Proximo post</a>
+            </button>
+          </Link>
+        )}
+      </section>
+
+      <Comments />
     </>
   )
 }
@@ -124,10 +186,27 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 };
 
-export const getStaticProps = async ({params}) => {
+export const getStaticProps = async ({ params, preview = false, previewData }) => {
   const prismic = getPrismicClient();
   const { slug } = params;
-  const response = await prismic.getByUID('posts', String(slug), {});
+  const response = await prismic.getByUID('posts', String(slug), {ref: previewData?.ref || null,});
+
+  const prevPost = await prismic.query([Prismic.Predicates.at('document.type', 'posts')],
+  {
+    pageSize: 1,
+    after: response.id,
+    orderings: '[document.first_publication_date]'
+  }
+  );
+
+  const nextPost = await prismic.query([Prismic.Predicates.at('document.type', 'posts')],
+  {
+    pageSize: 1,
+    after: response.id,
+    orderings: '[document.last_publication_date]'
+  }
+  );
+  
 
   const post = {
     uid: response.uid,
@@ -151,7 +230,12 @@ export const getStaticProps = async ({params}) => {
 
   return {
     props: {
-      post
+      post,
+      preview,
+      navigation: {
+        prevPost: prevPost?.results,
+        nextPost: nextPost?.results
+      }
     },
     revalidate: 3600
   }

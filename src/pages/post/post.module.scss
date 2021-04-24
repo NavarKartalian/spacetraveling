@@ -12,6 +12,7 @@
     ul {
         list-style: none;
         margin-top:1.5rem;
+        margin-bottom: 1rem;
         display: flex;
         align-items: center;
     
@@ -44,4 +45,40 @@
     .postBody {
         color: var(--gray);
     }
+}
+.navigation {
+  border-top: 1px solid rgb(49, 48, 48);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding: 0;
+
+  button {
+    max-width: 20rem;
+    padding: 1rem;
+    margin-top: 3.5rem;
+    background-color: #1A1D23;
+    border: 0;
+    border-radius: 8px;
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--white);
+      margin-bottom: 0.5rem;
+    }
+
+    a {
+      color: var(--highlight);
+      font-size: 1rem;
+    }
+  }
+
+  .prev {
+    text-align: left;
+  }
+
+  .next {
+    text-align: right;
+  }
 }
